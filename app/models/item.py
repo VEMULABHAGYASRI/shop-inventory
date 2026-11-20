@@ -36,3 +36,8 @@ class Item(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+
+    @property
+    def is_low_stock(self) -> bool:
+        """The business rule for "needs reordering", in exactly one place."""
+        return self.quantity <= self.reorder_level
