@@ -1,0 +1,52 @@
+"""Application factory: builds and wires the FastAPI app.
+
+Run with:  uvicorn --factory app.main:create_app
+
+`create_app` takes its collaborators as arguments (settings, notifier) instead
+of reading globals. Production passes nothing and gets the real ones; tests
+pass an in-memory database and a fake notifier.
+"""
+import time
+import uuid
+
+from fastapi import FastAPI, Request
+
+from app.config import Settings
+from app.errors import error_response, register_error_handlers
+from app.logging_config import configure_logging, get_logger, request_id_var
+from app.routes import health
+
+logger = get_logger("http")
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
+    settings = settings or Settings()
+    configure_logging(settings.log_level)
+
+    app = FastAPI(title="Shop Inventory")
+    app.state.settings = settings
+
+    register_error_handlers(app)
+
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        request_id = uuid.uuid4().hex[:8]
+        request_id_var.set(request_id)
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            # Last line of defence: log the full traceback, but never leak
+            # internals to the client.
+            logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+            response = error_response(500, "internal_error", "Something went wrong")
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        logger.info(
+            "%s %s -> %s (%.0f ms)",
+            request.method, request.url.path, response.status_code, elapsed_ms,
+        )
+        response.headers["X-Request-ID"] = request_id
+        return response
+
+    app.include_router(health.router)
+    return app
