@@ -1,0 +1,11 @@
+# Runtime
+fastapi==0.165.0
+uvicorn==0.54.0
+sqlalchemy==2.1.9
+pydantic==2.14.4
+pydantic-settings==2.16.3
+pyjwt==2.15.1
+httpx==0.28.1          # used by the webhook notifier AND by FastAPI's TestClient
+
+# Testing
+pytest==9.2.0

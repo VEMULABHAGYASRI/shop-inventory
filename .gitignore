@@ -1,0 +1,19 @@
+# Virtual environment
+.venv/
+
+# Python caches
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local configuration and secrets - copy .env.example to .env instead
+.env
+
+# Local database files (your real shop data never goes into git)
+data/*.db
+data/*.db-*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
