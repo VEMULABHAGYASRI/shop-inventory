@@ -29,3 +29,26 @@ def app(settings):
 def client(app):
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture
+def db(app):
+    """A session on the same database the app uses, for arranging test data."""
+    with app.state.session_factory() as session:
+        yield session
+
+
+@pytest.fixture
+def user(db):
+    from app.services.auth_service import create_user
+
+    return create_user(db, "mum", "correct-horse-battery")
+
+
+@pytest.fixture
+def auth_headers(client, user) -> dict:
+    resp = client.post(
+        "/api/auth/login", json={"username": "mum", "password": "correct-horse-battery"}
+    )
+    assert resp.status_code == 200, resp.text
+    return {"Authorization": f"Bearer {resp.json()['access_token']}"}

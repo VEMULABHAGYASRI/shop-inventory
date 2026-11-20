@@ -15,7 +15,7 @@ from app.config import Settings
 from app.database import init_db, make_engine, make_session_factory
 from app.errors import error_response, register_error_handlers
 from app.logging_config import configure_logging, get_logger, request_id_var
-from app.routes import health
+from app.routes import auth, health
 
 logger = get_logger("http")
 
@@ -55,4 +55,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return response
 
     app.include_router(health.router)
+    app.include_router(auth.router)
     return app
