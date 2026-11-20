@@ -1,12 +1,11 @@
 """Routes are thin: parse input (via schemas), call a service, shape output."""
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.config import Settings
-from app.dependencies import get_current_user, get_db, get_settings
+from app.dependencies import get_current_user, get_db, get_settings, get_token
 from app.models import User
 from app.schemas.auth import LoginRequest, TokenResponse, UserCreate, UserOut
-from app.security import create_access_token
 from app.services import auth_service
 
 router = APIRouter(prefix="/api", tags=["auth"])
@@ -19,8 +18,14 @@ def login(
     settings: Settings = Depends(get_settings),
 ):
     user = auth_service.authenticate(db, body.username, body.password)
-    token = create_access_token(user.id, settings.secret_key, settings.token_expire_minutes)
+    token = auth_service.start_session(db, user, settings.session_expire_minutes)
     return TokenResponse(access_token=token)
+
+
+@router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(token: str = Depends(get_token), db: Session = Depends(get_db)):
+    auth_service.end_session(db, token)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/auth/me", response_model=UserOut)

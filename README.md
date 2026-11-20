@@ -21,14 +21,13 @@ python3 -m venv .venv            # needs: sudo apt install python3-venv
 .venv/bin/pip install -r requirements.txt
 #    (or, with uv:  uv venv .venv && uv pip install --python .venv/bin/python -r requirements.txt)
 
-# 2. Create your config file and put a real secret key in it
-cp .env.example .env
-python3 -c "import secrets; print(secrets.token_urlsafe(32))"
-#    paste the output as INVENTORY_SECRET_KEY in .env
-
-# 3. Create the first login (there is no public sign-up page)
+# 2. Create the first login (there is no public sign-up page)
 .venv/bin/python -m app.cli create-user mum
 ```
+
+No configuration is required: there are no keys to generate and `.env` is
+optional. Copy `.env.example` to `.env` only if you want to change a default
+(database location, login duration, phone alerts).
 
 ## Run
 
@@ -81,6 +80,7 @@ All endpoints except login and health need `Authorization: Bearer <token>`.
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/api/auth/login` | Log in, get a token |
+| POST | `/api/auth/logout` | Log out (token stops working) |
 | GET | `/api/auth/me` | Who am I |
 | GET/POST | `/api/users` | List / add family members |
 | GET | `/api/items?search=&category=&low_stock=true` | List items |

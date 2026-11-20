@@ -15,7 +15,6 @@ from tests.fakes import FakeNotifier
 def settings() -> Settings:
     return Settings(
         _env_file=None,  # ignore any local .env
-        secret_key="test-secret-key-that-is-long-enough",
         database_url="sqlite://",  # in-memory
         log_level="WARNING",
     )

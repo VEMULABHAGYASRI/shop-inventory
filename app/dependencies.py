@@ -14,7 +14,7 @@ from app.database import session_scope
 from app.errors import AuthenticationError
 from app.models import User
 from app.notifications import Notifier
-from app.security import decode_access_token
+from app.services import auth_service
 
 
 def get_settings(request: Request) -> Settings:
@@ -32,17 +32,13 @@ def get_db(request: Request) -> Iterator[Session]:
 _bearer = HTTPBearer(auto_error=False)
 
 
-def get_current_user(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    db: Session = Depends(get_db),
-) -> User:
-    """Add `user: User = Depends(get_current_user)` to a route to require login."""
+def get_token(credentials: HTTPAuthorizationCredentials | None = Depends(_bearer)) -> str:
+    """The raw token from the `Authorization: Bearer <token>` header."""
     if credentials is None:
         raise AuthenticationError("Not logged in")
-    settings: Settings = request.app.state.settings
-    user_id = decode_access_token(credentials.credentials, settings.secret_key)
-    user = db.get(User, user_id)
-    if user is None:  # token for a user that was deleted
-        raise AuthenticationError("Invalid authentication token")
-    return user
+    return credentials.credentials
+
+
+def get_current_user(token: str = Depends(get_token), db: Session = Depends(get_db)) -> User:
+    """Add `user: User = Depends(get_current_user)` to a route to require login."""
+    return auth_service.user_for_token(db, token)

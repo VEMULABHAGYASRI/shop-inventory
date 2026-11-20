@@ -10,7 +10,6 @@ def _settings(tmp_path):
 
     return Settings(
         _env_file=None,
-        secret_key="test-secret-key-that-is-long-enough",
         database_url=f"sqlite:///{tmp_path}/cli.db",
     )
 

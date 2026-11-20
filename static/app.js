@@ -62,7 +62,8 @@ $("#login-form").addEventListener("submit", async (e) => {
   }
 });
 
-$("#logout").addEventListener("click", () => {
+$("#logout").addEventListener("click", async () => {
+  try { await api.logout(); } catch { /* already logged out on the server */ }
   auth.token = null;
   showLogin();
 });

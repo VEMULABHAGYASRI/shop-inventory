@@ -1,10 +1,18 @@
-from sqlalchemy import select
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.errors import AuthenticationError, ConflictError, NotFoundError
 from app.logging_config import get_logger
-from app.models import User
-from app.security import hash_password, verify_password
+from app.models import LoginSession, User
+from app.models._common import utcnow
+from app.security import (
+    hash_password,
+    hash_session_token,
+    new_session_token,
+    verify_password,
+)
 
 logger = get_logger("auth")
 
@@ -47,3 +55,40 @@ def get_user(db: Session, user_id: int) -> User:
 
 def list_users(db: Session) -> list[User]:
     return list(db.scalars(select(User).order_by(User.username)))
+
+
+def _as_utc(value: datetime) -> datetime:
+    # SQLite hands datetimes back without a timezone; we always store UTC.
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def start_session(db: Session, user: User, expire_minutes: int) -> str:
+    """Log a user in. Returns the token to give to the browser."""
+    now = utcnow()
+    # Housekeeping: drop sessions that have expired, so the table stays small.
+    db.execute(delete(LoginSession).where(LoginSession.expires_at < now))
+    token = new_session_token()
+    db.add(LoginSession(token_hash=hash_session_token(token), user_id=user.id,
+                        expires_at=now + timedelta(minutes=expire_minutes)))
+    db.commit()
+    return token
+
+
+def user_for_token(db: Session, token: str) -> User:
+    """Return the logged-in user for a token, or raise AuthenticationError."""
+    session = db.scalar(
+        select(LoginSession).where(LoginSession.token_hash == hash_session_token(token))
+    )
+    if session is None:
+        raise AuthenticationError("Not logged in")
+    if _as_utc(session.expires_at) <= utcnow():
+        db.delete(session)
+        db.commit()
+        raise AuthenticationError("Your session has expired, please log in again")
+    return session.user
+
+
+def end_session(db: Session, token: str) -> None:
+    """Log out: the token stops working immediately."""
+    db.execute(delete(LoginSession).where(LoginSession.token_hash == hash_session_token(token)))
+    db.commit()

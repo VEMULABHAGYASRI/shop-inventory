@@ -40,7 +40,7 @@ def test_webhook_http_error_status_is_logged(caplog):
 
 
 def _settings(**kw):
-    return Settings(_env_file=None, secret_key="test-secret-key-that-is-long-enough", **kw)
+    return Settings(_env_file=None, **kw)
 
 
 def test_factory_defaults_to_log_notifier():

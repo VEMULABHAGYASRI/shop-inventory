@@ -1,9 +1,3 @@
-import pytest
-from pydantic import ValidationError
-
-from app.config import Settings
-
-
 def test_health(client):
     resp = client.get("/api/health")
     assert resp.status_code == 200
@@ -19,14 +13,18 @@ def test_unknown_route_uses_standard_error_format(client):
     assert body["error"]["request_id"] == resp.headers["X-Request-ID"]
 
 
-@pytest.mark.parametrize("bad_key", ["change-me", "short"])
-def test_settings_reject_weak_secret_key(bad_key):
-    with pytest.raises(ValidationError):
-        Settings(_env_file=None, secret_key=bad_key)
-
-
 def test_web_ui_is_served(client):
     resp = client.get("/")
     assert resp.status_code == 200
     assert "<title>Shop Inventory</title>" in resp.text
     assert client.get("/app.js").status_code == 200
+
+
+def test_runs_with_no_configuration(monkeypatch, tmp_path):
+    """No .env and no environment variables: defaults must be enough."""
+    from app.config import Settings
+
+    monkeypatch.chdir(tmp_path)
+    settings = Settings()
+    assert settings.database_url.startswith("sqlite")
+    assert settings.low_stock_webhook_url == ""

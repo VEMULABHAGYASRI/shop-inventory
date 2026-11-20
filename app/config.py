@@ -1,9 +1,9 @@
-"""Application settings, read from environment variables (or a .env file).
+"""Application settings.
 
-Every setting is prefixed with INVENTORY_ in the environment, e.g. the field
-`secret_key` is read from INVENTORY_SECRET_KEY. See .env.example.
+Every setting has a sensible default, so the app runs with no configuration.
+To change one, set an environment variable (prefixed INVENTORY_) or put it in
+an optional .env file. See .env.example.
 """
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,19 +14,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # No default on purpose: the app must not start with a guessable key.
-    secret_key: str
     database_url: str = "sqlite:///./data/inventory.db"
-    token_expire_minutes: int = 720
+    session_expire_minutes: int = 720  # 12 hours = one shop day
     log_level: str = "INFO"
     low_stock_webhook_url: str = ""
-
-    @field_validator("secret_key")
-    @classmethod
-    def secret_key_must_be_real(cls, value: str) -> str:
-        if value == "change-me" or len(value) < 32:
-            raise ValueError(
-                "INVENTORY_SECRET_KEY must be a random string of at least 32 "
-                "characters. See .env.example for how to generate one."
-            )
-        return value

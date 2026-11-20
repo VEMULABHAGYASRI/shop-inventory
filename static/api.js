@@ -62,6 +62,7 @@ function query(params) {
 
 export const api = {
   login: (username, password) => request("POST", "/api/auth/login", { username, password }),
+  logout: () => request("POST", "/api/auth/logout"),
   me: () => request("GET", "/api/auth/me"),
   listItems: (filters) => request("GET", `/api/items${query(filters)}`),
   listCategories: () => request("GET", "/api/categories"),

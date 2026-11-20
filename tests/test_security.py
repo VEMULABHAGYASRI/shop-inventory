@@ -1,15 +1,10 @@
 """Unit tests for the pure security helpers (no app, no database)."""
-import pytest
-
-from app.errors import AuthenticationError
 from app.security import (
-    create_access_token,
-    decode_access_token,
     hash_password,
+    hash_session_token,
+    new_session_token,
     verify_password,
 )
-
-KEY = "unit-test-secret-key-long-enough"
 
 
 def test_password_hash_roundtrip():
@@ -27,18 +22,13 @@ def test_verify_handles_garbage_hash():
     assert verify_password("x", "not-a-real-hash") is False
 
 
-def test_token_roundtrip():
-    token = create_access_token(42, KEY, expire_minutes=5)
-    assert decode_access_token(token, KEY) == 42
+def test_session_tokens_are_random_and_long():
+    tokens = {new_session_token() for _ in range(100)}
+    assert len(tokens) == 100
+    assert all(len(t) >= 40 for t in tokens)
 
 
-def test_expired_token_rejected():
-    token = create_access_token(42, KEY, expire_minutes=-1)
-    with pytest.raises(AuthenticationError, match="expired"):
-        decode_access_token(token, KEY)
-
-
-def test_token_signed_with_other_key_rejected():
-    token = create_access_token(42, "another-secret-key-that-is-long-enough", 5)
-    with pytest.raises(AuthenticationError):
-        decode_access_token(token, KEY)
+def test_token_fingerprint_is_stable_and_not_the_token():
+    token = new_session_token()
+    assert hash_session_token(token) == hash_session_token(token)
+    assert token not in hash_session_token(token)

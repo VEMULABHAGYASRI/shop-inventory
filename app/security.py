@@ -5,21 +5,16 @@ algorithm designed for passwords, with a random salt per user. The stored
 string records its own parameters, so they can be raised later without
 breaking existing hashes.
 
-Tokens: JSON Web Tokens signed with INVENTORY_SECRET_KEY. Anyone can *read* a
-JWT, but nobody can create or alter one without the key.
+Login tokens: 256 random bits from the `secrets` module. Unguessable, so no
+signing key is needed; the server simply looks them up (see auth_service).
+Only their SHA-256 fingerprint is stored.
 """
 import base64
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timedelta, timezone
-
-import jwt
-
-from app.errors import AuthenticationError
 
 _SCRYPT_N, _SCRYPT_R, _SCRYPT_P = 2**14, 8, 1
-_ALGORITHM = "HS256"
 
 
 def _b64(data: bytes) -> str:
@@ -49,18 +44,11 @@ def verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(actual, expected)
 
 
-def create_access_token(user_id: int, secret_key: str, expire_minutes: int) -> str:
-    now = datetime.now(timezone.utc)
-    payload = {"sub": str(user_id), "iat": now, "exp": now + timedelta(minutes=expire_minutes)}
-    return jwt.encode(payload, secret_key, algorithm=_ALGORITHM)
+def new_session_token() -> str:
+    return secrets.token_urlsafe(32)
 
 
-def decode_access_token(token: str, secret_key: str) -> int:
-    """Return the user id inside a valid token, or raise AuthenticationError."""
-    try:
-        payload = jwt.decode(token, secret_key, algorithms=[_ALGORITHM])
-        return int(payload["sub"])
-    except jwt.ExpiredSignatureError:
-        raise AuthenticationError("Your session has expired, please log in again")
-    except (jwt.InvalidTokenError, KeyError, ValueError):
-        raise AuthenticationError("Invalid authentication token")
+def hash_session_token(token: str) -> str:
+    # A plain fast hash is right here (unlike passwords): the token is
+    # already 256 random bits, so there is nothing to brute-force.
+    return hashlib.sha256(token.encode()).hexdigest()

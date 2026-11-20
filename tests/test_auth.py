@@ -63,3 +63,38 @@ def test_duplicate_username_conflict(client, auth_headers):
 def test_short_password_rejected(client, auth_headers):
     resp = client.post("/api/users", json={"username": "dad", "password": "short"}, headers=auth_headers)
     assert resp.status_code == 422
+
+
+def test_logout_revokes_token(client, auth_headers):
+    assert client.post("/api/auth/logout", headers=auth_headers).status_code == 204
+    resp = client.get("/api/auth/me", headers=auth_headers)
+    assert resp.status_code == 401
+
+
+def test_two_logins_are_independent(client, user, auth_headers):
+    other = client.post("/api/auth/login", json={"username": "mum", "password": "correct-horse-battery"})
+    other_headers = {"Authorization": f"Bearer {other.json()['access_token']}"}
+    client.post("/api/auth/logout", headers=auth_headers)
+    assert client.get("/api/auth/me", headers=other_headers).status_code == 200
+
+
+def test_expired_session_rejected(client, db, auth_headers):
+    from datetime import datetime, timezone
+
+    from app.models import LoginSession
+
+    for s in db.query(LoginSession):
+        s.expires_at = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    db.commit()
+    resp = client.get("/api/auth/me", headers=auth_headers)
+    assert resp.status_code == 401
+    assert "expired" in resp.json()["error"]["message"]
+
+
+def test_database_stores_only_token_fingerprint(client, db, auth_headers):
+    from app.models import LoginSession
+
+    token = auth_headers["Authorization"].removeprefix("Bearer ")
+    stored = [s.token_hash for s in db.query(LoginSession)]
+    assert token not in stored
+    assert len(stored) == 1

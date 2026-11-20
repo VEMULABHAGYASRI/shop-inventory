@@ -69,12 +69,16 @@ shape. Unexpected errors are logged with a traceback but the client only sees
 for that request, in the `X-Request-ID` response header, and in error bodies.
 When someone reports an error, search the log for the id.
 
-**Authentication.** Passwords are hashed with scrypt (standard library,
-random salt per user, parameters stored in the hash). Login returns a JWT
-signed with `INVENTORY_SECRET_KEY`, valid for 12 hours by default. No public
-sign-up: the first user is made with the CLI, then logged-in users can add
-others. Unknown-username and wrong-password logins give the same message and
-take the same time. The app refuses to start with a missing or short key.
+**Authentication, with no secret keys to manage.** Passwords are hashed with
+scrypt (standard library, random salt per user, parameters stored in the
+hash). Logging in creates a random 256-bit token; the server stores only its
+SHA-256 fingerprint in the `login_sessions` table and looks it up on every
+request. Because the token is random rather than signed, the app needs no
+secret key and runs with zero configuration. Bonus: logout deletes the row,
+so a token can be revoked instantly (a signed JWT can't be). Sessions last 12
+hours by default. No public sign-up: the first user is made with the CLI,
+then logged-in users can add others. Unknown-username and wrong-password
+logins give the same message and take the same time.
 
 **Frontend.** Plain JS modules, no build step. `api.js` is the only file that
 calls the server. Server data is always inserted with `textContent`, never
