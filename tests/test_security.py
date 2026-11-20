@@ -39,6 +39,6 @@ def test_expired_token_rejected():
 
 
 def test_token_signed_with_other_key_rejected():
-    token = create_access_token(42, "another-secret-key-long-enough!", 5)
+    token = create_access_token(42, "another-secret-key-that-is-long-enough", 5)
     with pytest.raises(AuthenticationError):
         decode_access_token(token, KEY)

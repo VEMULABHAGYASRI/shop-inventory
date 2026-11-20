@@ -24,9 +24,9 @@ class Settings(BaseSettings):
     @field_validator("secret_key")
     @classmethod
     def secret_key_must_be_real(cls, value: str) -> str:
-        if value == "change-me" or len(value) < 16:
+        if value == "change-me" or len(value) < 32:
             raise ValueError(
-                "INVENTORY_SECRET_KEY must be a random string of at least 16 "
+                "INVENTORY_SECRET_KEY must be a random string of at least 32 "
                 "characters. See .env.example for how to generate one."
             )
         return value
