@@ -12,6 +12,7 @@ import uuid
 from fastapi import FastAPI, Request
 
 from app.config import Settings
+from app.database import init_db, make_engine, make_session_factory
 from app.errors import error_response, register_error_handlers
 from app.logging_config import configure_logging, get_logger, request_id_var
 from app.routes import health
@@ -25,6 +26,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="Shop Inventory")
     app.state.settings = settings
+
+    engine = make_engine(settings.database_url)
+    init_db(engine)
+    app.state.engine = engine
+    app.state.session_factory = make_session_factory(engine)
 
     register_error_handlers(app)
 
