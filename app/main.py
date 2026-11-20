@@ -8,8 +8,10 @@ pass an in-memory database and a fake notifier.
 """
 import time
 import uuid
+from pathlib import Path
 
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 
 from app.config import Settings
 from app.database import init_db, make_engine, make_session_factory
@@ -19,6 +21,8 @@ from app.notifications import Notifier, build_notifier
 from app.routes import auth, health, items, movements
 
 logger = get_logger("http")
+
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
 
 def create_app(settings: Settings | None = None, notifier: Notifier | None = None) -> FastAPI:
@@ -60,4 +64,7 @@ def create_app(settings: Settings | None = None, notifier: Notifier | None = Non
     app.include_router(auth.router)
     app.include_router(items.router)
     app.include_router(movements.router)
+
+    # The web UI. Mounted last so the /api routes above take priority.
+    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
     return app

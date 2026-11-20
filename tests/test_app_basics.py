@@ -23,3 +23,10 @@ def test_unknown_route_uses_standard_error_format(client):
 def test_settings_reject_weak_secret_key(bad_key):
     with pytest.raises(ValidationError):
         Settings(_env_file=None, secret_key=bad_key)
+
+
+def test_web_ui_is_served(client):
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "<title>Shop Inventory</title>" in resp.text
+    assert client.get("/app.js").status_code == 200

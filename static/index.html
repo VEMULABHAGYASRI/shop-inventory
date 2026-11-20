@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shop Inventory</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <!-- Login screen -->
+  <section id="login-view" class="card narrow" hidden>
+    <h1>Shop Inventory</h1>
+    <form id="login-form">
+      <label>Username <input name="username" autocomplete="username" required></label>
+      <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Log in</button>
+      <p class="error" id="login-error"></p>
+    </form>
+  </section>
+
+  <!-- Main app -->
+  <div id="app-view" hidden>
+    <header>
+      <h1>Shop Inventory</h1>
+      <nav>
+        <button class="tab active" data-tab="items">Items</button>
+        <button class="tab" data-tab="activity">Activity</button>
+      </nav>
+      <span id="current-user"></span>
+      <button id="logout" class="secondary">Log out</button>
+    </header>
+
+    <p class="error banner" id="app-error" hidden></p>
+
+    <main>
+      <section id="items-tab">
+        <div class="toolbar">
+          <input id="search" type="search" placeholder="Search name or SKU">
+          <select id="category-filter"><option value="">All categories</option></select>
+          <label class="inline"><input id="low-stock-filter" type="checkbox"> Low stock only</label>
+          <button id="add-item">+ Add item</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>SKU</th><th>Name</th><th>Category</th>
+            <th class="num">Qty</th><th class="num">Reorder at</th><th class="num">Price</th><th></th>
+          </tr></thead>
+          <tbody id="items-body"></tbody>
+        </table>
+        <p id="items-empty" class="muted" hidden>No items match.</p>
+      </section>
+
+      <section id="activity-tab" hidden>
+        <table>
+          <thead><tr><th>When</th><th>Item</th><th class="num">Change</th><th>Reason</th><th class="num">After</th><th>By</th><th>Note</th></tr></thead>
+          <tbody id="activity-body"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <!-- Add / edit item -->
+  <dialog id="item-dialog">
+    <form id="item-form" method="dialog">
+      <h2 id="item-dialog-title">Add item</h2>
+      <label>SKU <input name="sku" required maxlength="40"></label>
+      <label>Name <input name="name" required maxlength="200"></label>
+      <label>Category <input name="category" maxlength="100" list="category-list"></label>
+      <datalist id="category-list"></datalist>
+      <label>Reorder at (quantity) <input name="reorder_level" type="number" min="0" value="0" required></label>
+      <label>Price <input name="price" type="number" min="0" step="0.01" value="0.00" required></label>
+      <label id="initial-qty-label">Opening stock <input name="initial_quantity" type="number" min="0" value="0"></label>
+      <p class="error" id="item-error"></p>
+      <div class="actions">
+        <button type="button" id="delete-item" class="danger" hidden>Delete</button>
+        <button type="button" class="secondary" data-close>Cancel</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Record a stock movement -->
+  <dialog id="move-dialog">
+    <form id="move-form" method="dialog">
+      <h2>Stock: <span id="move-item-name"></span></h2>
+      <p class="muted">Currently in stock: <strong id="move-current"></strong></p>
+      <label>What happened?
+        <select name="reason">
+          <option value="sold">Sold (−)</option>
+          <option value="received">Received delivery (+)</option>
+          <option value="returned">Customer return (+)</option>
+          <option value="damaged">Damaged / expired (−)</option>
+          <option value="adjustment">Stock-take correction (+/−)</option>
+        </select>
+      </label>
+      <label>Quantity <input name="amount" type="number" required></label>
+      <p class="muted small" id="move-hint"></p>
+      <label>Note (optional) <input name="note" maxlength="500"></label>
+      <p class="error" id="move-error"></p>
+      <div class="actions">
+        <button type="button" class="secondary" data-close>Cancel</button>
+        <button type="submit">Record</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- One item's history -->
+  <dialog id="history-dialog">
+    <h2>History: <span id="history-item-name"></span></h2>
+    <table>
+      <thead><tr><th>When</th><th class="num">Change</th><th>Reason</th><th class="num">After</th><th>By</th><th>Note</th></tr></thead>
+      <tbody id="history-body"></tbody>
+    </table>
+    <div class="actions"><button type="button" class="secondary" data-close>Close</button></div>
+  </dialog>
+</body>
+</html>
