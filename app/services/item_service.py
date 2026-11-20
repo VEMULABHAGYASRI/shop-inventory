@@ -58,8 +58,11 @@ def get_item(db: Session, item_id: int) -> Item:
     return item
 
 
-def create_item(db: Session, *, sku: str, name: str, category: str | None = None,
-                reorder_level: int = 0, unit_price_cents: int = 0) -> Item:
+def create_item(db: Session, *, user_id: int, sku: str, name: str,
+                category: str | None = None, reorder_level: int = 0,
+                unit_price_cents: int = 0, initial_quantity: int = 0) -> Item:
+    from app.services.stock_service import apply_movement  # avoid circular import
+
     sku = _normalize_sku(sku)
     _ensure_sku_free(db, sku)
     item = Item(
@@ -67,7 +70,11 @@ def create_item(db: Session, *, sku: str, name: str, category: str | None = None
         reorder_level=reorder_level, unit_price_cents=unit_price_cents,
     )
     db.add(item)
-    db.commit()
+    db.flush()  # assigns item.id without committing yet
+    if initial_quantity:
+        # Opening stock is recorded as a movement too, so history adds up.
+        apply_movement(db, item, initial_quantity, "received", "Initial stock", user_id)
+    db.commit()  # item + opening movement saved together, or not at all
     logger.info("Created item %s (id=%s)", item.sku, item.id)
     return item
 

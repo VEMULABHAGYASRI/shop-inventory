@@ -15,17 +15,19 @@ from app.config import Settings
 from app.database import init_db, make_engine, make_session_factory
 from app.errors import error_response, register_error_handlers
 from app.logging_config import configure_logging, get_logger, request_id_var
-from app.routes import auth, health, items
+from app.notifications import Notifier, build_notifier
+from app.routes import auth, health, items, movements
 
 logger = get_logger("http")
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, notifier: Notifier | None = None) -> FastAPI:
     settings = settings or Settings()
     configure_logging(settings.log_level)
 
     app = FastAPI(title="Shop Inventory")
     app.state.settings = settings
+    app.state.notifier = notifier or build_notifier(settings)
 
     engine = make_engine(settings.database_url)
     init_db(engine)
@@ -57,4 +59,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(items.router)
+    app.include_router(movements.router)
     return app

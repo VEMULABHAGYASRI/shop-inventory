@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_current_user, get_db
+from app.models import User
 from app.schemas.item import ItemCreate, ItemOut, ItemUpdate
 from app.services import item_service
 
@@ -25,8 +26,9 @@ def list_categories(db: Session = Depends(get_db)):
 
 
 @router.post("/items", response_model=ItemOut, status_code=status.HTTP_201_CREATED)
-def create_item(body: ItemCreate, db: Session = Depends(get_db)):
-    return item_service.create_item(db, **body.model_dump())
+def create_item(body: ItemCreate, db: Session = Depends(get_db),
+                user: User = Depends(get_current_user)):
+    return item_service.create_item(db, user_id=user.id, **body.model_dump())
 
 
 @router.get("/items/{item_id}", response_model=ItemOut)

@@ -13,11 +13,16 @@ from app.config import Settings
 from app.database import session_scope
 from app.errors import AuthenticationError
 from app.models import User
+from app.notifications import Notifier
 from app.security import decode_access_token
 
 
 def get_settings(request: Request) -> Settings:
     return request.app.state.settings
+
+
+def get_notifier(request: Request) -> Notifier:
+    return request.app.state.notifier
 
 
 def get_db(request: Request) -> Iterator[Session]:

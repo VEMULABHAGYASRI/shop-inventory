@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.main import create_app
+from tests.fakes import FakeNotifier
 
 
 @pytest.fixture
@@ -21,8 +22,13 @@ def settings() -> Settings:
 
 
 @pytest.fixture
-def app(settings):
-    return create_app(settings)
+def notifier() -> FakeNotifier:
+    return FakeNotifier()
+
+
+@pytest.fixture
+def app(settings, notifier):
+    return create_app(settings, notifier=notifier)
 
 
 @pytest.fixture

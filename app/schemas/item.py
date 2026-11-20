@@ -21,6 +21,7 @@ class ItemCreate(BaseModel):
     category: Category | None = None
     reorder_level: ReorderLevel = 0
     unit_price_cents: PriceCents = 0
+    initial_quantity: Annotated[int, Field(ge=0, le=1_000_000)] = 0
 
 
 class ItemUpdate(BaseModel):
